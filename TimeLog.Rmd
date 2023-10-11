@@ -1,0 +1,46 @@
+---
+title: "Untitled"
+author: "Raj Vardhan Jhanwar"
+date: "2023-10-11"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+
+library(tidyverse)
+library(readxl)
+library(lubridate)
+library(scales)
+library(viridis)
+library(hrbrthemes)
+
+```
+
+
+```{r}
+
+df <- read.csv("/Users/raj/Downloads/TimeLog.csv")
+
+df$Date <- as.Date(df$Day)
+df$Hours <- as.numeric(df$Hours)  
+
+total_by_date <- df %>%
+  group_by(Date, Type) %>%
+  summarise(
+    hrs = sum(Hours)
+  ) %>%
+  ungroup() %>%
+  complete(Date = seq(first(Date), last(Date), by = "day")) %>%
+  complete(Type, Date, fill = list(hrs = 0))
+ 
+ggplot(total_by_date, aes(x = Date, y = hrs, fill = Type)) +
+  geom_area(alpha = 0.6, size = .5, colour = "white", position = "stack") +
+  ggtitle("Activity by Date and Customers")
+
+```
+

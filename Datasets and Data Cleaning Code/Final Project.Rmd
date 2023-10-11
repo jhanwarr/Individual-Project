@@ -1,0 +1,114 @@
+---
+title: "Final Project"
+author: "Raj Vardhan Jhanwar"
+date: "2023-09-24"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+################################################
+Packages
+################################################
+
+```{r}
+
+library(tidyr)
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+
+```
+
+################################################
+Loading and Cleaning the Data
+################################################
+
+```{r, echo=FALSE}
+
+lifeExpectancy <- read.csv("/Users/raj/Downloads/Data/Life_Expectancy_00_15.csv")
+lifeExpectancy$Year <- as.character(lifeExpectancy$Year)
+
+# Loading and converting the following datasets to a long format one with the 
+# Year as one variable and not multiple variables
+
+inflation <- read.csv("/Users/raj/Downloads/Data/Inflation.csv", check.names = FALSE)
+inflation <- pivot_longer(inflation, 
+                          cols = c("2000", "2001", "2002", "2003", "2004", 
+                                   "2005", "2006", "2007", "2008", "2009", 
+                                   "2010", "2011", "2012", "2013", "2014", "2015"), 
+                          names_to = "Year",
+                          values_to = "Inflation") %>% select(-Indicator.Name, -Indicator.Code)
+
+unemployment <- read.csv("/Users/raj/Downloads/Data/Unemployment.csv", check.names = FALSE)
+unemployment <- pivot_longer(unemployment, 
+                             cols = c("2000", "2001", "2002", "2003", "2004", 
+                                      "2005", "2006", "2007", "2008", "2009", 
+                                      "2010", "2011", "2012", "2013", "2014", "2015"), 
+                             names_to = "Year",
+                             values_to = "Unemployment") %>% select(-Indicator.Name, -Indicator.Code)
+
+land_area <- read.csv("/Users/raj/Downloads/Data/Land_Area.csv", check.names = FALSE)
+land_area <- pivot_longer(land_area, 
+                          cols = c("2000", "2001", "2002", "2003", "2004", 
+                                   "2005", "2006", "2007", "2008", "2009", 
+                                   "2010", "2011", "2012", "2013", "2014", "2015"), 
+                          names_to = "Year",
+                          values_to = "Land.Area") %>% select(-Indicator.Name, -Indicator.Code)
+
+```
+
+
+################################################
+Merging the Data
+################################################
+
+```{r}
+
+data <- left_join(x = unemployment, y = land_area, by = c("Country", "Year", "Country.Code"))
+data <- left_join(x = data, y = inflation, by = c("Country", "Year", "Country.Code"))
+data <- left_join(x = lifeExpectancy, y = data, by = c("Country", "Year"))
+
+```
+
+
+################################################
+Changing the column names of the merged Data
+################################################
+
+```{r}
+
+data$Country.code <- data$Country.Code
+data$Open.defecation <- data$People.practicing.open.defecation
+data$Potable.water <- data$People.using.at.least.basic.drinking.water.services
+data$Obesity <- data$Obesity.among.adults
+data$LeastDeveloped <- data$Least.Developed
+data$Beer.consumption <- data$Beer.consumption.per.capita
+
+```
+
+
+################################################
+Cleaning the merged the Data
+################################################
+
+```{r}
+
+data <- select(data, -Least.Developed)
+
+# Splitting Least.Developed into two dummy variables
+data <- data %>% mutate(Least.Developed = ifelse(LeastDeveloped == TRUE, 1, 0),
+                        Developing.and.Developed = ifelse(LeastDeveloped == FALSE, 1, 0))
+
+data <- data %>% select(Country, Country.code, Year, Life.Expectancy, Continent, 
+                        Least.Developed, Developing.and.Developed, Population, 
+                        GDP.per.capita, Beer.consumption, Unemployment, 
+                        Inflation, Health.expenditure, Military.expenditure, 
+                        CO2.emissions, Forest.area, Land.Area, Open.defecation, 
+                        Potable.water, Obesity)
+
+data$Year <- as.numeric(data$Year)
+
+```
